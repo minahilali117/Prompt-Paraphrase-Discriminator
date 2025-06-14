@@ -280,195 +280,196 @@ class PromptClassifier:
             
             return history
     
-def _save_model(self, save_path, filename):
-        """Save the trained model."""
-        os.makedirs(save_path, exist_ok=True)
-        model_path = os.path.join(save_path, filename)
-        
-        # Save model state and metadata
-        torch.save({
-            'model_state_dict': self.model.state_dict(),
-            'model_type': self.model_type,
-            'embed_dim': self.embed_dim,
-            'input_dim': self.input_dim,
-            'hidden_dims': self.hidden_dims,
-            'dropout': self.dropout
-        }, model_path)
-        
-        print(f"Model saved to {model_path}")
+    def _save_model(self, save_path, filename):
+            """Save the trained model."""
+            os.makedirs(save_path, exist_ok=True)
+            model_path = os.path.join(save_path, filename)
+            
+            # Save model state and metadata
+            torch.save({
+                'model_state_dict': self.model.state_dict(),
+                'model_type': self.model_type,
+                'embed_dim': self.embed_dim,
+                'input_dim': self.input_dim,
+                'hidden_dims': self.hidden_dims,
+                'dropout': self.dropout
+            }, model_path)
+            
+            print(f"Model saved to {model_path}")
     
-def load_model(self, model_path):
-        """Load a trained model."""
-        checkpoint = torch.load(model_path, map_location=self.device)
+    def load_model(self, model_path):
+            """Load a trained model."""
+            checkpoint = torch.load(model_path, map_location=self.device)
+            
+            # Restore model parameters
+            self.model_type = checkpoint.get('model_type', self.model_type)
+            self.embed_dim = checkpoint.get('embed_dim', self.embed_dim)
+            self.input_dim = checkpoint.get('input_dim', self.input_dim)
+            self.hidden_dims = checkpoint.get('hidden_dims', self.hidden_dims)
+            self.dropout = checkpoint.get('dropout', self.dropout)
+            
+            # Create and load model
+            self.model = self._create_model()
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+            self.model.eval()
+            
+            print(f"Model loaded from {model_path}")
         
-        # Restore model parameters
-        self.model_type = checkpoint.get('model_type', self.model_type)
-        self.embed_dim = checkpoint.get('embed_dim', self.embed_dim)
-        self.input_dim = checkpoint.get('input_dim', self.input_dim)
-        self.hidden_dims = checkpoint.get('hidden_dims', self.hidden_dims)
-        self.dropout = checkpoint.get('dropout', self.dropout)
+    def predict(self, df, batch_size=32):
+            """Make predictions on a dataset."""
+            if self.model is None:
+                raise ValueError("Model not trained or loaded. Call train() or load_model() first.")
+            
+            dataset = PromptPairDataset(df, self.embedder)
+            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+            
+            self.model.eval()
+            predictions = []
+            probabilities = []
+            
+            with torch.no_grad():
+                for batch_features, _ in tqdm(dataloader, desc='Predicting'):
+                    batch_features = batch_features.to(self.device)
+                    outputs = self.model(batch_features)
+                    
+                    probs = torch.sigmoid(outputs).view(-1).cpu().numpy()
+                    preds = (probs > 0.5).astype(int)
+
+                    # Defensive: make sure these are always iterable
+                    probabilities.extend(probs.tolist())
+                    predictions.extend(preds.tolist())
+
+            return np.array(predictions), np.array(probabilities)
         
-        # Create and load model
-        self.model = self._create_model()
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.model.eval()
+    def predict_pair(self, prompt1, prompt2):
+            """Make prediction on a single prompt pair."""
+            # Create temporary dataframe
+            temp_df = pd.DataFrame({
+                'prompt1': [prompt1],
+                'prompt2': [prompt2],
+                'label': [0]  # Dummy label
+            })
+            
+            predictions, probabilities = self.predict(temp_df, batch_size=1)
+            return predictions[0], probabilities[0]
         
-        print(f"Model loaded from {model_path}")
-    
-def predict(self, df, batch_size=32):
-        """Make predictions on a dataset."""
-        if self.model is None:
-            raise ValueError("Model not trained or loaded. Call train() or load_model() first.")
+    def evaluate(self, test_df, batch_size=32):
+            """Evaluate the model on test data."""
+            predictions, probabilities = self.predict(test_df, batch_size)
+            y_true = test_df['label'].values
+            
+            # Calculate metrics
+            accuracy = accuracy_score(y_true, predictions)
+            precision, recall, f1, _ = precision_recall_fscore_support(y_true, predictions, average='binary')
+            roc_auc = roc_auc_score(y_true, probabilities)
+            
+            # Calculate confusion matrix components
+            from sklearn.metrics import confusion_matrix
+            tn, fp, fn, tp = confusion_matrix(y_true, predictions).ravel()
+            
+            metrics = {
+                'accuracy': accuracy,
+                'precision': precision,
+                'recall': recall,
+                'f1': f1,
+                'roc_auc': roc_auc,
+                'true_positives': tp,
+                'true_negatives': tn,
+                'false_positives': fp,
+                'false_negatives': fn,
+                'specificity': tn / (tn + fp) if (tn + fp) > 0 else 0.0
+            }
+            
+            print("\n" + "="*50)
+            print("EVALUATION RESULTS")
+            print("="*50)
+            print(f"Accuracy:    {accuracy:.4f}")
+            print(f"Precision:   {precision:.4f}")
+            print(f"Recall:      {recall:.4f}")
+            print(f"F1-Score:    {f1:.4f}")
+            print(f"ROC-AUC:     {roc_auc:.4f}")
+            print(f"Specificity: {metrics['specificity']:.4f}")
+            print("\nConfusion Matrix:")
+            print(f"True Positives:  {tp}")
+            print(f"True Negatives:  {tn}")
+            print(f"False Positives: {fp}")
+            print(f"False Negatives: {fn}")
+            print("="*50)
+            
+            return metrics, predictions, probabilities
         
-        dataset = PromptPairDataset(df, self.embedder)
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    def plot_training_history(self, history, save_path=None):
+            """Plot training history."""
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+            
+            # Plot loss
+            epochs = range(1, len(history['train_loss']) + 1)
+            ax1.plot(epochs, history['train_loss'], 'b-', label='Training Loss', linewidth=2)
+            if 'val_loss' in history and history['val_loss']:
+                ax1.plot(epochs, history['val_loss'], 'r-', label='Validation Loss', linewidth=2)
+            ax1.set_title('Model Loss Over Time', fontsize=14, fontweight='bold')
+            ax1.set_xlabel('Epoch', fontsize=12)
+            ax1.set_ylabel('Loss', fontsize=12)
+            ax1.legend(fontsize=11)
+            ax1.grid(True, alpha=0.3)
+            
+            # Plot accuracy
+            ax2.plot(epochs, history['train_acc'], 'b-', label='Training Accuracy', linewidth=2)
+            if 'val_acc' in history and history['val_acc']:
+                ax2.plot(epochs, history['val_acc'], 'r-', label='Validation Accuracy', linewidth=2)
+            ax2.set_title('Model Accuracy Over Time', fontsize=14, fontweight='bold')
+            ax2.set_xlabel('Epoch', fontsize=12)
+            ax2.set_ylabel('Accuracy', fontsize=12)
+            ax2.legend(fontsize=11)
+            ax2.grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            
+            if save_path:
+                plt.savefig(save_path, dpi=300, bbox_inches='tight')
+                print(f"Training history plot saved to {save_path}")
+            
+            plt.show()
         
-        self.model.eval()
-        predictions = []
-        probabilities = []
-        
-        with torch.no_grad():
-            for batch_features, _ in tqdm(dataloader, desc='Predicting'):
-                batch_features = batch_features.to(self.device)
-                outputs = self.model(batch_features)
+    def analyze_errors(self, test_df, predictions, probabilities, save_path=None):
+            """Analyze prediction errors."""
+            y_true = test_df['label'].values
+            
+            # Find errors
+            errors = predictions != y_true
+            error_indices = np.where(errors)[0]
+            
+            print(f"\nError Analysis: {len(error_indices)} errors out of {len(test_df)} samples")
+            print(f"Error rate: {len(error_indices)/len(test_df):.4f}")
+            
+            if len(error_indices) > 0:
+                # Analyze false positives and false negatives
+                false_positives = test_df.iloc[error_indices][(predictions[error_indices] == 1) & (y_true[error_indices] == 0)]
+                false_negatives = test_df.iloc[error_indices][(predictions[error_indices] == 0) & (y_true[error_indices] == 1)]
                 
-                probs = outputs.cpu().numpy()
-                preds = (outputs > 0.5).cpu().numpy().astype(int)
+                print(f"\nFalse Positives: {len(false_positives)}")
+                print(f"False Negatives: {len(false_negatives)}")
                 
-                probabilities.extend(probs)
-                predictions.extend(preds)
-        
-        return np.array(predictions), np.array(probabilities)
-    
-def predict_pair(self, prompt1, prompt2):
-        """Make prediction on a single prompt pair."""
-        # Create temporary dataframe
-        temp_df = pd.DataFrame({
-            'prompt1': [prompt1],
-            'prompt2': [prompt2],
-            'label': [0]  # Dummy label
-        })
-        
-        predictions, probabilities = self.predict(temp_df, batch_size=1)
-        return predictions[0], probabilities[0]
-    
-def evaluate(self, test_df, batch_size=32):
-        """Evaluate the model on test data."""
-        predictions, probabilities = self.predict(test_df, batch_size)
-        y_true = test_df['label'].values
-        
-        # Calculate metrics
-        accuracy = accuracy_score(y_true, predictions)
-        precision, recall, f1, _ = precision_recall_fscore_support(y_true, predictions, average='binary')
-        roc_auc = roc_auc_score(y_true, probabilities)
-        
-        # Calculate confusion matrix components
-        from sklearn.metrics import confusion_matrix
-        tn, fp, fn, tp = confusion_matrix(y_true, predictions).ravel()
-        
-        metrics = {
-            'accuracy': accuracy,
-            'precision': precision,
-            'recall': recall,
-            'f1': f1,
-            'roc_auc': roc_auc,
-            'true_positives': tp,
-            'true_negatives': tn,
-            'false_positives': fp,
-            'false_negatives': fn,
-            'specificity': tn / (tn + fp) if (tn + fp) > 0 else 0.0
-        }
-        
-        print("\n" + "="*50)
-        print("EVALUATION RESULTS")
-        print("="*50)
-        print(f"Accuracy:    {accuracy:.4f}")
-        print(f"Precision:   {precision:.4f}")
-        print(f"Recall:      {recall:.4f}")
-        print(f"F1-Score:    {f1:.4f}")
-        print(f"ROC-AUC:     {roc_auc:.4f}")
-        print(f"Specificity: {metrics['specificity']:.4f}")
-        print("\nConfusion Matrix:")
-        print(f"True Positives:  {tp}")
-        print(f"True Negatives:  {tn}")
-        print(f"False Positives: {fp}")
-        print(f"False Negatives: {fn}")
-        print("="*50)
-        
-        return metrics, predictions, probabilities
-    
-def plot_training_history(self, history, save_path=None):
-        """Plot training history."""
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
-        
-        # Plot loss
-        epochs = range(1, len(history['train_loss']) + 1)
-        ax1.plot(epochs, history['train_loss'], 'b-', label='Training Loss', linewidth=2)
-        if 'val_loss' in history and history['val_loss']:
-            ax1.plot(epochs, history['val_loss'], 'r-', label='Validation Loss', linewidth=2)
-        ax1.set_title('Model Loss Over Time', fontsize=14, fontweight='bold')
-        ax1.set_xlabel('Epoch', fontsize=12)
-        ax1.set_ylabel('Loss', fontsize=12)
-        ax1.legend(fontsize=11)
-        ax1.grid(True, alpha=0.3)
-        
-        # Plot accuracy
-        ax2.plot(epochs, history['train_acc'], 'b-', label='Training Accuracy', linewidth=2)
-        if 'val_acc' in history and history['val_acc']:
-            ax2.plot(epochs, history['val_acc'], 'r-', label='Validation Accuracy', linewidth=2)
-        ax2.set_title('Model Accuracy Over Time', fontsize=14, fontweight='bold')
-        ax2.set_xlabel('Epoch', fontsize=12)
-        ax2.set_ylabel('Accuracy', fontsize=12)
-        ax2.legend(fontsize=11)
-        ax2.grid(True, alpha=0.3)
-        
-        plt.tight_layout()
-        
-        if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Training history plot saved to {save_path}")
-        
-        plt.show()
-    
-def analyze_errors(self, test_df, predictions, probabilities, save_path=None):
-        """Analyze prediction errors."""
-        y_true = test_df['label'].values
-        
-        # Find errors
-        errors = predictions != y_true
-        error_indices = np.where(errors)[0]
-        
-        print(f"\nError Analysis: {len(error_indices)} errors out of {len(test_df)} samples")
-        print(f"Error rate: {len(error_indices)/len(test_df):.4f}")
-        
-        if len(error_indices) > 0:
-            # Analyze false positives and false negatives
-            false_positives = test_df.iloc[error_indices][(predictions[error_indices] == 1) & (y_true[error_indices] == 0)]
-            false_negatives = test_df.iloc[error_indices][(predictions[error_indices] == 0) & (y_true[error_indices] == 1)]
+                # Show some examples
+                if len(false_positives) > 0:
+                    print("\nSample False Positives (predicted same, actually different):")
+                    for i, (_, row) in enumerate(false_positives.head(3).iterrows()):
+                        prob = probabilities[error_indices][predictions[error_indices] == 1][i] if i < len(probabilities[error_indices][predictions[error_indices] == 1]) else 0.0
+                        print(f"  Confidence: {prob:.3f}")
+                        print(f"  Prompt 1: {row['prompt1']}")
+                        print(f"  Prompt 2: {row['prompt2']}")
+                        print()
+                
+                if len(false_negatives) > 0:
+                    print("Sample False Negatives (predicted different, actually same):")
+                    for i, (_, row) in enumerate(false_negatives.head(3).iterrows()):
+                        prob = probabilities[error_indices][predictions[error_indices] == 0][i] if i < len(probabilities[error_indices][predictions[error_indices] == 0]) else 0.0
+                        print(f"  Confidence: {1-prob:.3f}")
+                        print(f"  Prompt 1: {row['prompt1']}")
+                        print(f"  Prompt 2: {row['prompt2']}")
+                        print()
             
-            print(f"\nFalse Positives: {len(false_positives)}")
-            print(f"False Negatives: {len(false_negatives)}")
-            
-            # Show some examples
-            if len(false_positives) > 0:
-                print("\nSample False Positives (predicted same, actually different):")
-                for i, (_, row) in enumerate(false_positives.head(3).iterrows()):
-                    prob = probabilities[error_indices][predictions[error_indices] == 1][i] if i < len(probabilities[error_indices][predictions[error_indices] == 1]) else 0.0
-                    print(f"  Confidence: {prob:.3f}")
-                    print(f"  Prompt 1: {row['prompt1']}")
-                    print(f"  Prompt 2: {row['prompt2']}")
-                    print()
-            
-            if len(false_negatives) > 0:
-                print("Sample False Negatives (predicted different, actually same):")
-                for i, (_, row) in enumerate(false_negatives.head(3).iterrows()):
-                    prob = probabilities[error_indices][predictions[error_indices] == 0][i] if i < len(probabilities[error_indices][predictions[error_indices] == 0]) else 0.0
-                    print(f"  Confidence: {1-prob:.3f}")
-                    print(f"  Prompt 1: {row['prompt1']}")
-                    print(f"  Prompt 2: {row['prompt2']}")
-                    print()
-        
-        return error_indices
+            return error_indices
 
 def main():
     parser = argparse.ArgumentParser(description='Train prompt paraphrase classifier')
