@@ -43,7 +43,7 @@ python dataset_creator.py --output_dir data/ --num_pairs 10000
 
 2. **Train Model**:
 ```bash
-python train_classifier.py --data_path data/training_pairs.csv --model_type labse
+python train_classifier.py --train_data data/training_pairs.csv --test_data data/test_pairs.csv --model_type labse
 ```
 
 3. **Evaluate**:
