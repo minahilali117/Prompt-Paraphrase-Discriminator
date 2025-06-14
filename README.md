@@ -243,20 +243,6 @@ best_classifier = classifier.grid_search(train_data, param_grid)
 4. Ensure all tests pass
 5. Submit a pull request
 
-## License
-
-MIT License - see LICENSE file for details.
-
-## Citation
-
-```bibtex
-@misc{prompt-paraphrase-discriminator,
-  title={Multilingual Prompt Paraphrase Discriminator},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/yourusername/prompt-paraphrase-discriminator}
-}
-```
 
 ## Support
 
