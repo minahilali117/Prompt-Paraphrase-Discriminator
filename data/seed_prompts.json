@@ -1,0 +1,187 @@
+{
+  "seed_prompts": {
+    "objects": [
+      "a red bicycle",
+      "a blue car",
+      "a green tree",
+      "a yellow flower",
+      "a white house",
+      "a black cat",
+      "a brown dog",
+      "a silver laptop",
+      "a wooden chair",
+      "a glass window"
+    ],
+    "actions": [
+      "running in the park",
+      "sleeping on the couch",
+      "flying in the sky",
+      "swimming in the lake",
+      "climbing the mountain",
+      "reading a book",
+      "playing music",
+      "cooking dinner",
+      "dancing happily",
+      "walking slowly"
+    ],
+    "settings": [
+      "under a tree",
+      "on the beach",
+      "in the forest",
+      "near the river",
+      "beside the road",
+      "in the garden",
+      "at the park",
+      "on the mountain",
+      "by the lake",
+      "in the city"
+    ],
+    "weather": [
+      "during sunset",
+      "in the rain",
+      "on a sunny day",
+      "in the snow",
+      "during storm",
+      "at dawn",
+      "in the fog",
+      "under clear sky",
+      "in moonlight",
+      "during twilight"
+    ]
+  },
+  "synonyms": {
+    "red": [
+      "crimson",
+      "scarlet",
+      "cherry",
+      "ruby"
+    ],
+    "blue": [
+      "azure",
+      "navy",
+      "cerulean",
+      "cobalt"
+    ],
+    "green": [
+      "emerald",
+      "jade",
+      "olive",
+      "forest green"
+    ],
+    "big": [
+      "large",
+      "huge",
+      "enormous",
+      "massive"
+    ],
+    "small": [
+      "tiny",
+      "little",
+      "miniature",
+      "petite"
+    ],
+    "bicycle": [
+      "bike",
+      "cycle",
+      "two-wheeler"
+    ],
+    "car": [
+      "vehicle",
+      "automobile",
+      "auto"
+    ],
+    "dog": [
+      "canine",
+      "hound",
+      "pup",
+      "pooch"
+    ],
+    "cat": [
+      "feline",
+      "kitten",
+      "kitty"
+    ],
+    "house": [
+      "home",
+      "residence",
+      "dwelling"
+    ],
+    "running": [
+      "sprinting",
+      "jogging",
+      "racing"
+    ],
+    "walking": [
+      "strolling",
+      "ambling",
+      "pacing"
+    ],
+    "under": [
+      "beneath",
+      "below",
+      "underneath"
+    ],
+    "on": [
+      "upon",
+      "atop",
+      "over"
+    ],
+    "near": [
+      "close to",
+      "beside",
+      "next to"
+    ],
+    "beautiful": [
+      "gorgeous",
+      "stunning",
+      "lovely"
+    ],
+    "old": [
+      "ancient",
+      "elderly",
+      "aged"
+    ],
+    "fast": [
+      "quick",
+      "rapid",
+      "swift"
+    ]
+  },
+  "translations": {
+    "a red bicycle under a tree": {
+      "es": "una bicicleta roja bajo un \u00e1rbol",
+      "fr": "un v\u00e9lo rouge sous un arbre",
+      "de": "ein rotes Fahrrad unter einem Baum",
+      "it": "una bicicletta rossa sotto un albero",
+      "pt": "uma bicicleta vermelha sob uma \u00e1rvore"
+    },
+    "a blue car on the road": {
+      "es": "un coche azul en la carretera",
+      "fr": "une voiture bleue sur la route",
+      "de": "ein blaues Auto auf der Stra\u00dfe",
+      "it": "una macchina blu sulla strada",
+      "pt": "um carro azul na estrada"
+    },
+    "a dog running in the park": {
+      "es": "un perro corriendo en el parque",
+      "fr": "un chien qui court dans le parc",
+      "de": "ein Hund l\u00e4uft im Park",
+      "it": "un cane che corre nel parco",
+      "pt": "um cachorro correndo no parque"
+    },
+    "a cat sleeping on the couch": {
+      "es": "un gato durmiendo en el sof\u00e1",
+      "fr": "un chat qui dort sur le canap\u00e9",
+      "de": "eine Katze schl\u00e4ft auf dem Sofa",
+      "it": "un gatto che dorme sul divano",
+      "pt": "um gato dormindo no sof\u00e1"
+    },
+    "beautiful sunset over the ocean": {
+      "es": "hermoso atardecer sobre el oc\u00e9ano",
+      "fr": "beau coucher de soleil sur l'oc\u00e9an",
+      "de": "sch\u00f6ner Sonnenuntergang \u00fcber dem Ozean",
+      "it": "bellissimo tramonto sull'oceano",
+      "pt": "belo p\u00f4r do sol sobre o oceano"
+    }
+  }
+}
