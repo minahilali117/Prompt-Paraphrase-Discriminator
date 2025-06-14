@@ -1,0 +1,48 @@
+COMPREHENSIVE PROMPT PARAPHRASE CLASSIFIER EVALUATION REPORT
+================================================================================
+
+DATASET INFORMATION
+----------------------------------------
+Total Samples: 1669
+Positive Samples: 687 (41.2%)
+Negative Samples: 982 (58.8%)
+
+PERFORMANCE METRICS
+----------------------------------------
+Accuracy:           0.9958
+Balanced Accuracy:  0.9964
+Precision:          0.9899
+Recall:             1.0000
+F1-Score:           0.9949
+ROC-AUC:            1.0000
+Average Precision:  1.0000
+Specificity:        0.9929
+
+CONFUSION MATRIX
+----------------------------------------
+True Positives:     687
+True Negatives:     975
+False Positives:    7
+False Negatives:    0
+
+ERROR ANALYSIS
+----------------------------------------
+Total Errors:       7 (0.4%)
+False Positives:    7
+False Negatives:    0
+FP Avg Confidence:  0.585
+FN Avg Confidence:  0.000
+Correct Avg Conf:   0.596
+
+OPTIMAL THRESHOLDS
+----------------------------------------
+Best F1 Threshold:  0.700 (F1: 0.9993)
+Best Acc Threshold: 0.700 (Acc: 0.9994)
+
+MODEL CONFIGURATION
+----------------------------------------
+Model Type:         labse
+Embedding Dim:      384
+Input Dim:          1537
+Hidden Dims:        [512, 256, 128]
+Dropout Rate:       0.3
