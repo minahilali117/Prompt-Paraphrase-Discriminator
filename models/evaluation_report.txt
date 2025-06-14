@@ -1,0 +1,30 @@
+PROMPT PARAPHRASE CLASSIFIER EVALUATION REPORT
+============================================================
+
+Model Configuration:
+  Model Type: labse
+  Hidden Dimensions: [512, 256, 128]
+  Dropout Rate: 0.3
+  Learning Rate: 0.001
+  Batch Size: 32
+
+Dataset Information:
+  Training Samples: 5338
+  Validation Samples: 1335
+  Test Samples: 1669
+  Training Positive Ratio: 0.400
+  Test Positive Ratio: 0.412
+
+Performance Metrics:
+  Accuracy: 0.9958
+  Precision: 0.9899
+  Recall: 1.0000
+  F1-Score: 0.9949
+  ROC-AUC: 1.0000
+  Specificity: 0.9929
+
+Confusion Matrix:
+  True Positives: 687
+  True Negatives: 975
+  False Positives: 7
+  False Negatives: 0
